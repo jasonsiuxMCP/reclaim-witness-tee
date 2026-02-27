@@ -1,0 +1,24 @@
+# Based on Gramine/SCONE for TEE (e.g. AWS Nitro / Intel SGX)
+# We use a base image that supports Node.js in TEE
+FROM node:22-slim AS builder
+
+WORKDIR /app
+COPY package.json .
+COPY node_modules ./node_modules
+COPY witness-server/server.js ./server.js
+
+# Create minimal runtime image
+FROM node:22-slim
+
+WORKDIR /app
+COPY --from=builder /app /app
+
+# Expose port for TLS/MPC
+EXPOSE 8080
+
+# Environment variables for TEE runtime
+# In real deployment, PRIVATE_KEY is injected by TEE Attestation Service
+ENV PORT=8080
+ENV DISABLE_BGP_CHECKS=1
+
+CMD ["node", "server.js"]
