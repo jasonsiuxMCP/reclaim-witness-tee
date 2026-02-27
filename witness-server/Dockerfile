@@ -3,17 +3,20 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# Install system dependencies (Reclaim might need build tools for crypto)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy existing node_modules (assuming they are built correctly for linux/amd64)
-# In production, we should npm install to ensure architecture compatibility
-COPY node_modules ./node_modules
-COPY package.json .
+# Copy package definition
+COPY package.json package-lock.json ./
+
+# Install dependencies (rebuilds native modules for the container arch)
+# --ignore-scripts might break some native builds, so be careful. 
+# attestor-core likely needs scripts.
+RUN npm install --omit=dev
 
 # Copy our witness server script
 COPY witness-server/server.js ./server.js

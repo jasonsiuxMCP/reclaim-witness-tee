@@ -3,14 +3,20 @@
 FROM node:22-slim AS builder
 
 WORKDIR /app
-COPY package.json .
-COPY node_modules ./node_modules
+
+# Install build tools
+RUN apt-get update && apt-get install -y python3 make g++
+
+COPY package.json package-lock.json ./
+RUN npm install --omit=dev
+
 COPY witness-server/server.js ./server.js
 
 # Create minimal runtime image
 FROM node:22-slim
 
 WORKDIR /app
+# We need to copy node_modules from builder to ensure we have them
 COPY --from=builder /app /app
 
 # Expose port for TLS/MPC
